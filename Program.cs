@@ -18,9 +18,24 @@ var app = builder.Build();
 app.MapGet("/", () => "Task Tracker API is running!");
 
 
-app.MapGet("/tasks", async (TaskDbContext dbContext) =>
+app.MapGet("/tasks", async (
+    bool? completed,
+    TaskPriority? priority,
+    TaskDbContext dbContext) =>
 {
-    return await dbContext.Tasks.ToListAsync();
+    var query = dbContext.Tasks.AsQueryable();
+
+    if (completed.HasValue)
+    {
+        query = query.Where(task => task.IsCompleted == completed.Value);
+    }
+
+    if (priority.HasValue)
+    {
+        query = query.Where(task => task.Priority == priority.Value);
+    }
+
+    return await query.ToListAsync();
 });
 
 app.MapPost("/tasks", async (TaskItem task, TaskDbContext dbContext) =>
