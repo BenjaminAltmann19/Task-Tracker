@@ -1,41 +1,28 @@
+using Microsoft.EntityFrameworkCore;
 using TaskTrackerApi.Models;
+using TaskTrackerApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<TaskDbContext>(options =>
+    options.UseSqlite("Data Source=tasks.db"));
+
 var app = builder.Build();
 
 app.MapGet("/", () => "Task Tracker API is running!");
 
-app.MapGet("/hello/{name}", (string name) =>
+
+app.MapGet("/tasks", async (TaskDbContext dbContext) =>
 {
-    return $"Hello, {name}!";
+    return await dbContext.Tasks.ToListAsync();
 });
 
-app.MapGet("/tasks", () =>
+app.MapPost("/tasks", async (TaskItem task, TaskDbContext dbContext) =>
 {
-    var tasks = new List<TaskItem>
-    {
-        new TaskItem
-        {
-            Id = 1,
-            Title = "Prepare for interview",
-            Description = "Review C# and SQL",
-            DueDate = DateTime.Today.AddDays(1),
-            IsCompleted = false,
-            Priority = "High"
-        },
+    dbContext.Tasks.Add(task);
+    await dbContext.SaveChangesAsync();
 
-        new TaskItem
-        {
-            Id = 2,
-            Title = "Finish Task Tracker",
-            Description = "Build CRUD endpoints",
-            DueDate = DateTime.Today.AddDays(2),
-            IsCompleted = false,
-            Priority = "Medium"
-        }
-    };
-
-    return tasks;
+    return Results.Created($"/tasks/{task.Id}", task);
 });
 
 app.Run();
