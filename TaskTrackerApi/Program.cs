@@ -21,6 +21,7 @@ app.MapGet("/", () => "Task Tracker API is running!");
 app.MapGet("/tasks", async (
     bool? completed,
     TaskPriority? priority,
+    string? sort,
     TaskDbContext dbContext) =>
 {
     var query = dbContext.Tasks.AsQueryable();
@@ -34,6 +35,14 @@ app.MapGet("/tasks", async (
     {
         query = query.Where(task => task.Priority == priority.Value);
     }
+    
+    query = sort?.ToLower() switch
+    {
+        "duedate" => query.OrderBy(task => task.DueDate),
+        "priority" => query.OrderBy(task => task.Priority),
+        "title" => query.OrderBy(task => task.Title),
+        _ => query.OrderBy(task => task.Id)
+    };
 
     return await query.ToListAsync();
 });
@@ -103,3 +112,5 @@ app.MapGet("/tasks/{id}", async (int id, TaskDbContext dbContext) =>
 });
 
 app.Run();
+
+public partial class Program { } 
